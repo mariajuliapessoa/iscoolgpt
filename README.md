@@ -1,5 +1,9 @@
 # IsCoolGPT Backend
 
+# 🎓 IsCoolGPT Backend
+
+![CI/CD](https://github.com/mariajuliapessoa/iscoolgpt/actions/workflows/ci-cd.yml/badge.svg)
+
 Assistente educacional inteligente desenvolvido com Flask e integração com Google Gemini AI. O sistema permite que alunos façam perguntas e recebam respostas didáticas personalizadas através de uma API RESTful.
 
 ## Índice
