@@ -1,0 +1,44 @@
+# Ambiente virtual
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Variáveis de ambiente (IMPORTANTE!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+request_logs.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+*.dockerfile.swp
+
+# Arquivos de teste
+teste_gemini.py
+teste_http.py
+listar_modelos.py
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build/distribuição
+build/
+dist/
+*.egg-info/
