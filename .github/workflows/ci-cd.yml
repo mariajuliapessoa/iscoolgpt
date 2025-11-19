@@ -1,129 +1,97 @@
-# ============================================
-# Pipeline CI/CD - IsCoolGPT Backend
-# ============================================
-#
-# Workflow automatizado para:
-# - Build e testes
-# - Criação de imagem Docker
-# - Push para Docker Hub
-# - Preparação para deploy AWS
-#
-# Trigger: Push para branch main ou pull requests
-
 name: CI/CD Pipeline
 
-# Eventos que acionam o workflow
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
-# Variáveis de ambiente globais
+# Variáveis globais permitidas (não pode usar secrets aqui)
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend
   PYTHON_VERSION: '3.11'
 
-# Jobs do pipeline
 jobs:
-  # ============================================
-  # JOB 1: Build e Testes
-  # ============================================
   build-and-test:
     name: Build e Testes Python
     runs-on: ubuntu-latest
     
     steps:
-      # Checkout do código
-      - name: 📥 Checkout código
+      - name: Checkout código
         uses: actions/checkout@v4
       
-      # Setup Python
-      - name: 🐍 Configurar Python ${{ env.PYTHON_VERSION }}
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
       
-      # Instalar dependências
-      - name: 📦 Instalar dependências
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-flask
       
-      # Verificar sintaxe Python
-      - name: ✅ Verificar sintaxe Python
+      - name: Verificar sintaxe Python
         run: |
           python -m py_compile app.py
           python -m py_compile routes/*.py
       
-      # Teste de importação
-      - name: 🧪 Testar importações
+      - name: Testar importações
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python -c "from app import create_app; app = create_app(); print('✅ App criado com sucesso')"
+          python -c "from app import create_app; app = create_app(); print('App criado com sucesso')"
       
-      # Relatório de sucesso
-      - name: ✅ Build Python concluído
+      - name: Build Python concluído
         run: echo "Build e testes Python concluídos com sucesso!"
 
-  # ============================================
-  # JOB 2: Build e Push Docker
-  # ============================================
   docker-build-push:
     name: Build e Push Imagem Docker
     runs-on: ubuntu-latest
-    needs: build-and-test  # Só executa se job anterior passou
+    needs: build-and-test
+
+    # Aqui sim podemos usar secrets
+    env:
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend
     
     steps:
-      # Checkout do código
-      - name: 📥 Checkout código
+      - name: Checkout código
         uses: actions/checkout@v4
       
-      # Setup Docker Buildx (builder avançado)
-      - name: 🔧 Configurar Docker Buildx
+      - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      # ========== DEBUG: Verificar Secrets ==========
-      - name: 🔍 DEBUG - Verificar secrets
+      - name: DEBUG - Verificar secrets
         run: |
           echo "=========================================="
           echo "DEBUG: Verificação de Secrets"
           echo "=========================================="
-          echo ""
-          echo "Username completo: $DOCKER_USER"
-          echo "Username length: ${#DOCKER_USER} caracteres"
-          echo "Token length: ${#DOCKER_TOKEN} caracteres"
-          echo ""
+          echo "Username length: ${#DOCKER_USER}"
+          echo "Token length: ${#DOCKER_TOKEN}"
+          
           if [ -z "$DOCKER_USER" ]; then 
-            echo "❌ ERRO: USERNAME está VAZIO!"
+            echo "ERRO: Username está vazio"
           else
-            echo "✅ Username OK: ${DOCKER_USER:0:10}..."
+            echo "Username carregado"
           fi
           
           if [ -z "$DOCKER_TOKEN" ]; then 
-            echo "❌ ERRO: TOKEN está VAZIO!"
+            echo "ERRO: Token está vazio"
           else
-            echo "✅ Token OK (primeiros chars): ${DOCKER_TOKEN:0:15}..."
+            echo "Token carregado"
           fi
-          echo ""
           echo "=========================================="
         env:
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      # ==============================================
       
-      # Login no Docker Hub (usando action)
-      - name: 🔐 Login no Docker Hub (via action)
+      - name: Login no Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      # Extrair metadados (tags, labels)
-      - name: 🏷️ Extrair metadados Docker
+      - name: Extrair metadados Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -132,8 +100,7 @@ jobs:
             type=raw,value=latest
             type=sha,prefix={{branch}}-
       
-      # Build e Push
-      - name: 🐳 Build e Push imagem Docker
+      - name: Build e Push imagem Docker
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -143,61 +110,47 @@ jobs:
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
       
-      # Relatório de sucesso
-      - name: ✅ Imagem Docker publicada
+      - name: Imagem Docker publicada
         run: |
           echo "============================================"
-          echo "✅ Imagem Docker criada e enviada!"
+          echo "Imagem Docker criada e enviada"
           echo "============================================"
-          echo ""
-          echo "📦 Imagem: ${{ env.DOCKER_IMAGE }}:latest"
-          echo "🔗 URL: https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend"
-          echo ""
+          echo "Imagem: ${{ env.DOCKER_IMAGE }}:latest"
+          echo "URL: https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend"
           echo "============================================"
 
-  # ============================================
-  # JOB 3: Análise de Segurança
-  # ============================================
   security-scan:
     name: Análise de Segurança
     runs-on: ubuntu-latest
     needs: docker-build-push
     
     steps:
-      # Checkout do código
-      - name: 📥 Checkout código
+      - name: Checkout código
         uses: actions/checkout@v4
       
-      # Scan de vulnerabilidades Python
-      - name: 🔍 Scan de dependências Python
+      - name: Scan de dependências Python
         run: |
           pip install safety
           safety check --json || true
       
-      # Login no Docker Hub
-      - name: 🔐 Login no Docker Hub
+      - name: Login no Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      # Scan de vulnerabilidades Docker
-      - name: 🐳 Scan de segurança Docker
+      - name: Scan de segurança Docker
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.DOCKER_IMAGE }}:latest
+          image-ref: ${{ needs.docker-build-push.outputs.docker_image }}
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
       
-      # Relatório
-      - name: ✅ Análise de segurança concluída
+      - name: Análise de segurança concluída
         run: echo "Análise de segurança concluída!"
 
-  # ============================================
-  # JOB 4: Notificação de Sucesso
-  # ============================================
   notify-success:
     name: Notificação de Sucesso
     runs-on: ubuntu-latest
@@ -205,17 +158,13 @@ jobs:
     if: success()
     
     steps:
-      - name: 🎉 Pipeline concluída com sucesso
+      - name: Pipeline concluída com sucesso
         run: |
           echo "============================================"
-          echo "✅ PIPELINE CI/CD CONCLUÍDA COM SUCESSO!"
+          echo "PIPELINE CI/CD CONCLUÍDA COM SUCESSO"
           echo "============================================"
-          echo ""
-          echo "📋 Resumo:"
-          echo "  ✅ Build Python: OK"
-          echo "  ✅ Testes: OK"
-          echo "  ✅ Imagem Docker: Publicada"
-          echo "  ✅ Scan de segurança: OK"
-          echo ""
-          echo "🚀 Próximo passo: Deploy para AWS"
+          echo "Build Python: OK"
+          echo "Testes: OK"
+          echo "Imagem Docker: Publicada"
+          echo "Scan de segurança: OK"
           echo "============================================"
