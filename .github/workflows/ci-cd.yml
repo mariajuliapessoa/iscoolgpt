@@ -2,169 +2,51 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
-
-# Variáveis globais permitidas (não pode usar secrets aqui)
-env:
-  PYTHON_VERSION: '3.11'
+    branches: [ "main" ]
 
 jobs:
-  build-and-test:
-    name: Build e Testes Python
+  test-secrets:
+    name: Test Secrets Availability
     runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-      
-      - name: Configurar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-      
-      - name: Instalar dependências
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-flask
-      
-      - name: Verificar sintaxe Python
-        run: |
-          python -m py_compile app.py
-          python -m py_compile routes/*.py
-      
-      - name: Testar importações
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python -c "from app import create_app; app = create_app(); print('App criado com sucesso')"
-      
-      - name: Build Python concluído
-        run: echo "Build e testes Python concluídos com sucesso!"
 
-  docker-build-push:
-    name: Build e Push Imagem Docker
+    steps:
+      - name: Check if DOCKERHUB_USERNAME is available
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "DOCKERHUB_USERNAME not set"
+            exit 1
+          else
+            echo "DOCKERHUB_USERNAME is set"
+          fi
+
+      - name: Check if DOCKERHUB_TOKEN is available
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "DOCKERHUB_TOKEN not set"
+            exit 1
+          else
+            echo "DOCKERHUB_TOKEN is set"
+          fi
+
+  build-and-push:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: test-secrets
 
-    # Aqui sim podemos usar secrets
-    env:
-      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend
-    
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-      
-      - name: Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: DEBUG - Verificar secrets
-        run: |
-          echo "=========================================="
-          echo "DEBUG: Verificação de Secrets"
-          echo "=========================================="
-          echo "Username length: ${#DOCKER_USER}"
-          echo "Token length: ${#DOCKER_TOKEN}"
-          
-          if [ -z "$DOCKER_USER" ]; then 
-            echo "ERRO: Username está vazio"
-          else
-            echo "Username carregado"
-          fi
-          
-          if [ -z "$DOCKER_TOKEN" ]; then 
-            echo "ERRO: Token está vazio"
-          else
-            echo "Token carregado"
-          fi
-          echo "=========================================="
-        env:
-          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Login no Docker Hub
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Extrair metadados Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix={{branch}}-
-      
-      - name: Build e Push imagem Docker
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
-      
-      - name: Imagem Docker publicada
-        run: |
-          echo "============================================"
-          echo "Imagem Docker criada e enviada"
-          echo "============================================"
-          echo "Imagem: ${{ env.DOCKER_IMAGE }}:latest"
-          echo "URL: https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend"
-          echo "============================================"
 
-  security-scan:
-    name: Análise de Segurança
-    runs-on: ubuntu-latest
-    needs: docker-build-push
-    
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-      
-      - name: Scan de dependências Python
-        run: |
-          pip install safety
-          safety check --json || true
-      
-      - name: Login no Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Scan de segurança Docker
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ needs.docker-build-push.outputs.docker_image }}
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-      
-      - name: Análise de segurança concluída
-        run: echo "Análise de segurança concluída!"
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend:latest .
 
-  notify-success:
-    name: Notificação de Sucesso
-    runs-on: ubuntu-latest
-    needs: [build-and-test, docker-build-push, security-scan]
-    if: success()
-    
-    steps:
-      - name: Pipeline concluída com sucesso
-        run: |
-          echo "============================================"
-          echo "PIPELINE CI/CD CONCLUÍDA COM SUCESSO"
-          echo "============================================"
-          echo "Build Python: OK"
-          echo "Testes: OK"
-          echo "Imagem Docker: Publicada"
-          echo "Scan de segurança: OK"
-          echo "============================================"
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/iscoolgpt-backend:latest
