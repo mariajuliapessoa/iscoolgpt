@@ -443,3 +443,4 @@ text
 ## 📄 Licença
 
 Este projeto foi desenvolvido para fins educacionais como parte da cadeira de Cloud Computing
+ 
