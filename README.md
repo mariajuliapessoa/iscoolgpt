@@ -438,7 +438,9 @@ text
 - GitHub: [@mariajuliapessoa](https://github.com/mariajuliapessoa)
 - Projeto: Trabalho Final - Cloud Computing 25.2
 - Instituição: CESAR School
+-  
 
 ## 📄 Licença
 
 Este projeto foi desenvolvido para fins educacionais como parte da cadeira de Cloud Computing
+ 
