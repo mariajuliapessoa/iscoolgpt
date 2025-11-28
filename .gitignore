@@ -32,14 +32,11 @@ request_logs.txt
 # Docker
 *.dockerfile.swp
 
-<<<<<<< HEAD
-=======
 # Arquivos de teste
 teste_gemini.py
 teste_http.py
 listar_modelos.py
 
->>>>>>> d9a968a0645869651a1db9b1efe627397d789a9b
 # Sistema operacional
 .DS_Store
 Thumbs.db
