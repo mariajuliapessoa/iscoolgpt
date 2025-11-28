@@ -1,0 +1,39 @@
+# Ambiente virtual
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Variáveis de ambiente 
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+request_logs.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+*.dockerfile.swp
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build/distribuição
+build/
+dist/
+*.egg-info/
