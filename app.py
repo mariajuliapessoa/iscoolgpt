@@ -45,5 +45,9 @@ def create_app():
 # Executar a aplicação
 if __name__ == "__main__":
     app = create_app()
+<<<<<<< HEAD
     app.run(debug=True, host='0.0.0.0',  port=8080)
 
+=======
+    app.run(debug=True, host='0.0.0.0')
+>>>>>>> d9a968a0645869651a1db9b1efe627397d789a9b

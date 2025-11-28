@@ -444,5 +444,8 @@ text
 
 Este projeto foi desenvolvido para fins educacionais como parte da cadeira de Cloud Computing
  
+<<<<<<< HEAD
 # ProjetoCloud
 # ProjetoCloud
+=======
+>>>>>>> d9a968a0645869651a1db9b1efe627397d789a9b
