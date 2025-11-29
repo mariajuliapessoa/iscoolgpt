@@ -3,6 +3,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 import json
 
+#testando deploy ao vivo
+
 # Carrega variáveis de ambiente do .env
 load_dotenv()
 
