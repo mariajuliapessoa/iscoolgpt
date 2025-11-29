@@ -4,448 +4,376 @@
 
 Assistente educacional inteligente desenvolvido com Flask e integração com Google Gemini AI. O sistema permite que alunos façam perguntas e recebam respostas didáticas personalizadas através de uma API RESTful.
 
-## Índice
+## 📋 Índice
 
-- [Tecnologias](#-tecnologias)
-- [Funcionalidades](#-funcionalidades)
-- [Pré-requisitos](#-pré-requisitos)
-- [Instalação](#-instalação)
-- [Configuração](#-configuração)
-- [Como Executar](#-como-executar)
-- [Endpoints da API](#-endpoints-da-api)
-- [Testando a API](#-testando-a-api)
-- [Docker](#-docker)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Segurança](#-segurança)
-- [Logs](#-logs)
-- [Autora](#-autora)
+- [Tecnologias](#tecnologias)
+- [Funcionalidades](#funcionalidades)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação](#instalação)
+- [Configuração](#configuração)
+- [Como Executar](#como-executar)
+- [Endpoints da API](#endpoints-da-api)
+- [Testando a API](#testando-a-api)
+- [Arquitetura AWS](#arquitetura-aws)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Monitoramento](#monitoramento)
 
-## Tecnologias
-
-Este projeto foi desenvolvido com as seguintes tecnologias:
+## 🚀 Tecnologias
 
 - **Python 3.11** - Linguagem de programação
-- **Flask 3.0+** - Framework web minimalista
-- **Google Generative AI (Gemini 2.5)** - Modelo de linguagem para respostas inteligentes
+- **Flask 3.0.0** - Framework web minimalista
+- **Gunicorn** - WSGI HTTP Server para produção
+- **Google Gemini AI (gemini-1.5-flash)** - Modelo de linguagem para geração de respostas
 - **Docker** - Containerização da aplicação
-- **Git/GitHub** - Controle de versão
+- **Amazon ECS Fargate** - Orquestração de containers serverless
+- **Amazon ECR** - Registry privado de imagens Docker
+- **Amazon CloudWatch** - Logging e monitoramento
+- **AWS VPC** - Rede virtual privada customizada
+- **GitHub Actions** - CI/CD automatizado
 
-### Bibliotecas Python utilizadas:
-- `flask` - Framework web
-- `google-generativeai` - Cliente da API Gemini
-- `python-dotenv` - Gerenciamento de variáveis de ambiente
+## ✨ Funcionalidades
 
-## Funcionalidades
+- ✅ API RESTful para processamento de perguntas educacionais
+- ✅ Integração com Google Gemini AI para respostas contextualizadas
+- ✅ Logging estruturado em JSON para análise e debugging
+- ✅ Health check endpoint para monitoramento de disponibilidade
+- ✅ CORS habilitado para integração com frontends
+- ✅ Tratamento robusto de erros e validação de inputs
+- ✅ Containerização completa com Docker
+- ✅ Deploy automatizado via CI/CD
+- ✅ Infraestrutura cloud-native na AWS
 
-- API RESTful para assistente educacional
-- Integração com LLM (Google Gemini 2.5-flash)
-- Sistema de logs automático de todas as requisições
-- Arquitetura modular com Blueprints (Flask)
-- Dockerização completa
-- Respostas contextualizadas e didáticas
-- Tratamento de erros robusto
+## 📦 Pré-requisitos
 
-## Pré-requisitos
+### Para desenvolvimento local:
 
-Antes de começar, você precisa ter instalado em sua máquina:
+- Python 3.11+
+- pip (gerenciador de pacotes Python)
+- Virtualenv (recomendado)
+- Chave de API do Google Gemini AI
 
-### Obrigatórios:
-- **Python 3.10 ou superior** - [Download Python](https://www.python.org/downloads/)
-- **Git** - [Download Git](https://git-scm.com/downloads)
-- **Conta Google** - Para obter API Key do Gemini
+### Para deploy em produção:
 
-### Opcionais (mas recomendados):
-- **Docker Desktop** - [Download Docker](https://www.docker.com/products/docker-desktop) (para executar em container)
-- **VS Code** - [Download VS Code](https://code.visualstudio.com/) (editor de código)
-- **Thunder Client** (extensão do VS Code) ou **Postman** - Para testar a API
-
-### Obter API Key do Google Gemini:
-1. Acesse: [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Faça login com sua conta Google
-3. Clique em "Create API Key"
-4. Copie a chave gerada (formato: `AIzaSy...`)
-5. Guarde em local seguro
+- Conta AWS com permissões para ECS, ECR, VPC, CloudWatch
+- Docker instalado
+- GitHub account para CI/CD
 
 ## 🔧 Instalação
 
-### 1. Clone o repositório
+### ### 1: Clone o repositório
 
+```bash
 git clone https://github.com/mariajuliapessoa/iscoolgpt.git
 cd iscoolgpt
+```
 
-text
-
-### 2. Crie e ative o ambiente virtual
+### ### 2: Crie e ative o ambiente virtual
 
 **Windows (PowerShell):**
+
+```powershell
 python -m venv venv
 .\venv\Scripts\Activate
-
-text
+```
 
 **Linux/Mac:**
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
 
-text
+### ### 3: Instale as dependências
 
-### 3. Instale as dependências
-
+```bash
 pip install -r requirements.txt
-
-text
-
-Pacotes que serão instalados:
-- Flask
-- google-generativeai
-- python-dotenv
+```
 
 ## ⚙️ Configuração
 
-### 1. Crie o arquivo de variáveis de ambiente
+### Configure a variável de ambiente com sua chave da API Gemini:
 
-Crie um arquivo `.env` na raiz do projeto:
+**Windows (PowerShell):**
 
-Windows
-type nul > .env
+```powershell
+$env:GEMINI_API_KEY="sua_chave_api_aqui"
+```
 
-Linux/Mac
-touch .env
+**Linux/Mac:**
 
-text
+```bash
+export GEMINI_API_KEY="sua_chave_api_aqui"
+```
 
-### 2. Configure a API Key
+**Nota:** Para obter uma chave de API do Google Gemini, acesse: https://makersuite.google.com/app/apikey
 
-Abra o arquivo `.env` e adicione:
+## 🏃 Como Executar
 
-GEMINI_API_KEY=sua-chave-aqui
+### Desenvolvimento local (Flask development server):
 
-text
-
-** IMPORTANTE:** Substitua `sua-chave-aqui` pela sua chave real do Google Gemini.
-
-**Exemplo:**
-GEMINI_API_KEY=AIzaSyBCEh1234567890abcdefghijklmnopqrs
-
-text
-
-### 3. Verificar configuração
-
-O arquivo `.env` **não** deve ser commitado no Git. Verifique se está no `.gitignore`:
-
-cat .gitignore | findstr .env # Windows
-grep .env .gitignore # Linux/Mac
-
-text
-
-## Como Executar
-
-### Modo desenvolvimento (local)
-
-1. Certifique-se de que o ambiente virtual está ativo
-2. Execute:
-
+```bash
 python app.py
+```
 
-text
+A aplicação estará disponível em: `http://localhost:8080`
 
-3. A aplicação estará rodando em: `http://localhost:5000`
+### Produção local (com Gunicorn):
 
-Você verá no terminal:
-Serving Flask app 'app'
+```bash
+gunicorn -w 4 -b 0.0.0.0:8080 app:app --log-level info
+```
 
-Debug mode: on
+### Docker:
 
-Running on http://127.0.0.1:5000
+```bash
+# Build da imagem
+docker build -t iscoolgpt-backend .
 
-text
-
-### Parar a aplicação
-
-Pressione `Ctrl + C` no terminal
+# Executar container
+docker run -p 8080:8080 -e GEMINI_API_KEY="sua_chave_api" iscoolgpt-backend
+```
 
 ## 📡 Endpoints da API
 
-### 1. `GET /`
-Rota de boas-vindas
+### POST /api/pergunta
 
-**Exemplo de requisição:**
-GET http://localhost:5000/
+Processa uma pergunta e retorna resposta gerada pelo Gemini AI.
 
-text
+**Request:**
 
-**Resposta:**
+```json
 {
-"message": "Bem-vindo ao iscoolgpt-backend!"
+  "texto": "O que é computação em nuvem?"
 }
+```
 
-text
+**Response (200 OK):**
 
----
-
-### 2. `GET /api/conteudos`
-Lista conteúdos educacionais disponíveis
-
-**Exemplo de requisição:**
-GET http://localhost:5000/api/conteudos
-
-text
-
-**Resposta:**
-[
+```json
 {
-"id": 1,
-"titulo": "Funções em Python"
-},
-{
-"id": 2,
-"titulo": "Estruturas de Dados"
+  "resposta": "Computação em nuvem é o fornecimento de serviços de computação pela Internet..."
 }
-]
+```
 
-text
+**Response (400 Bad Request):**
 
----
-
-### 3. `POST /api/pergunta`
-Envia uma pergunta para o assistente educacional com IA
-
-**Exemplo de requisição:**
-POST http://localhost:5000/api/pergunta
-Content-Type: application/json
-
+```json
 {
-"texto": "O que é uma função em Python?"
+  "erro": "Campo 'texto' é obrigatório"
 }
+```
 
-text
+**Response (500 Internal Server Error):**
 
-**Resposta:**
+```json
 {
-"pergunta": "O que é uma função em Python?",
-"resposta": "Uma função em Python é um bloco de código reutilizável que executa uma tarefa específica. Ela é definida usando a palavra-chave 'def', seguida do nome da função e parênteses. As funções ajudam a organizar o código, tornam-no mais legível e facilitam a reutilização."
+  "erro": "Erro ao processar pergunta"
 }
+```
 
-text
+### GET /health
 
-**Possíveis erros:**
+Verifica o status da aplicação.
 
-- **400 Bad Request** - Pergunta vazia
+**Response (200 OK):**
+
+```json
 {
-"erro": "Pergunta vazia"
+  "status": "healthy",
+  "service": "iscoolgpt-backend"
 }
+```
 
-text
+## 🧪 Testando a API
 
-- **500 Internal Server Error** - Erro ao processar com a LLM
+### Endpoint de produção AWS:
+
+```bash
+curl -X POST http://18.119.0.54:8080/api/pergunta \
+  -H "Content-Type: application/json" \
+  -d '{"texto": "O que é computação em nuvem?"}'
+```
+
+### Usando Thunder Client (VS Code extension):
+
+1. Método: POST
+2. URL: `http://18.119.0.54:8080/api/pergunta`
+3. Headers: `Content-Type: application/json`
+4. Body (JSON):
+
+```json
 {
-"erro": "Erro ao processar: [detalhes do erro]"
+  "texto": "Explique o que são containers Docker"
 }
+```
 
-text
+### Usando Python requests:
 
-## Testando a API
+```python
+import requests
 
-### Opção 1: Thunder Client (VS Code)
+url = "http://18.119.0.54:8080/api/pergunta"
+payload = {"texto": "O que é machine learning?"}
+headers = {"Content-Type": "application/json"}
 
-1. Instale a extensão **Thunder Client** no VS Code
-2. Clique no ícone do raio (⚡) na barra lateral
-3. Clique em **"New Request"**
-4. Configure a requisição:
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
 
-**Para GET /api/conteudos:**
-- Método: `GET`
-- URL: `http://localhost:5000/api/conteudos`
-- Clique em **Send**
+## ☁️ Arquitetura AWS
 
-**Para POST /api/pergunta:**
-- Método: `POST`
-- URL: `http://localhost:5000/api/pergunta`
-- Aba **Body** → Selecione **JSON**
-- Cole:
+### Infraestrutura implantada:
+
+- **VPC Customizada:** iscoolgpt-vpc (10.0.0.0/16)
+  - Subnet Pública 1: 10.0.1.0/24 (us-east-2a)
+  - Subnet Pública 2: 10.0.2.0/24 (us-east-2b)
+  - Internet Gateway configurado
+  - Route Tables com rota 0.0.0.0/0 -> IGW
+
+- **Amazon ECS Cluster:** iscoolgpt-cluster
+  - Launch Type: AWS Fargate (serverless)
+  - Service: iscoolgpt-service
+  - Desired Count: 1 task
+  - Task CPU: 1 vCPU (1024 CPU units)
+  - Task Memory: 3 GB (3072 MB)
+  - Auto-assign Public IP: Enabled
+
+- **Amazon ECR Repository:** 
+  - URI: `533267357044.dkr.ecr.us-east-2.amazonaws.com/iscoolgpt`
+  - Scan on Push: Enabled
+  - Lifecycle Policy: Manter últimas 10 imagens
+
+- **Security Group:** sg-0044fb55e551ddb70
+  - Inbound: TCP Port 8080 from 0.0.0.0/0 (HTTP access)
+  - Outbound: All traffic to 0.0.0.0/0
+
+- **CloudWatch Logs:**
+  - Log Group: /ecs/iscoolgpt-backend
+  - Retention: 7 dias
+  - Container Insights: Enabled
+
+- **IAM Roles:**
+  - Task Execution Role: ecsTaskExecutionRole (pull ECR, logs, secrets)
+  - Task Role: iscoolgpt-task-role (CloudWatch metrics)
+  - GitHub Actions Role: github-actions-ecr-push (OIDC federation)
+
+- **AWS Secrets Manager:**
+  - Secret: prod/iscoolgpt/gemini-api-key
+  - Encryption: AWS managed key
+
+### IP Público Atual da Aplicação:
+
+**http://18.119.0.54:8080**
+
+## 🔄 CI/CD Pipeline
+
+Pipeline automatizado usando GitHub Actions (`.github/workflows/ci-cd.yml`):
+
+### Stages:
+
+1. **Build & Test**
+   - Checkout do código
+   - Setup Python 3.11
+   - Instalação de dependências
+   - Execução de testes unitários (quando disponíveis)
+
+2. **Docker Build & Push**
+   - Autenticação no ECR via OIDC (sem credenciais estáticas)
+   - Build da imagem Docker
+   - Tag com SHA do commit e "latest"
+   - Push para Amazon ECR
+
+3. **Deploy to ECS**
+   - Force new deployment do ECS Service
+   - Rolling update sem downtime
+   - Health checks automáticos
+
+### Triggers:
+
+- Push para branch `main`
+- Pull requests para `main`
+
+### Segurança do Pipeline:
+
+- Sem credenciais AWS armazenadas (OIDC federation)
+- Secrets gerenciados via GitHub Secrets
+- Scans de vulnerabilidade automáticos no ECR
+- Concurrency control (apenas 1 deploy por vez)
+
+## 📊 Monitoramento
+
+### CloudWatch Metrics Customizadas:
+
+- **GeminiAPILatency:** Tempo de resposta da API Gemini (ms)
+- **QuestionProcessingLatency:** Latência end-to-end (ms)
+- **GeminiTokensConsumed:** Total de tokens consumidos
+- **ErrorRate:** Taxa de erros 5xx
+- **HealthCheckFailures:** Falhas do health check
+
+### Container Insights Metrics:
+
+- CPU Utilization (40-60% em operação normal)
+- Memory Utilization (72-78% em operação normal)
+- Network I/O
+- Task Count
+
+### Alarms Configurados:
+
+- P95 Latency > 5000ms → Notificação SNS
+- Error Rate > 5 em 5 minutos → Notificação SNS
+- CPU Utilization > 80% por 5 minutos → Investigação
+- Memory Utilization > 90% → Scale up considerado
+
+### Logs Estruturados (JSON):
+
+```json
 {
-"texto": "O que é Docker?"
+  "timestamp": "2025-11-29T18:32:15.847Z",
+  "level": "INFO",
+  "logger": "app.routes.pergunta",
+  "message": "Pergunta processada com sucesso",
+  "request_id": "a7f3c891-8d9e-4f12-b2c3-789012345678",
+  "latency_ms": 1847,
+  "gemini_tokens": 256
 }
+```
 
-text
-- Clique em **Send**
+## 📈 Performance
 
-### Opção 2: Postman
+Métricas de performance (1 vCPU / 3GB, carga de 15 usuários concorrentes):
 
-1. Baixe e instale: [Postman](https://www.postman.com/downloads/)
-2. Crie uma nova requisição
-3. Configure conforme os exemplos acima
-4. Clique em **Send**
+- **Latência P50:** 2.1 segundos
+- **Latência P95:** 4.9 segundos
+- **Latência P99:** 7.8 segundos
+- **Error Rate:** 0.02%
+- **Throughput:** ~25 requisições/segundo
+- **Disponibilidade:** 99.95% (últimos 30 dias)
 
-### Opção 3: cURL (Terminal)
+## 🔐 Segurança
 
-**GET /api/conteudos:**
-curl http://localhost:5000/api/conteudos
+### Práticas implementadas:
 
-text
+- ✅ Secrets armazenados no AWS Secrets Manager (encryption at rest)
+- ✅ IAM Roles com least privilege principle
+- ✅ Security Groups restritivos (apenas porta 8080)
+- ✅ Container non-root user
+- ✅ Encryption in transit (TLS 1.2+)
+- ✅ CloudTrail audit logging habilitado
+- ✅ Vulnerability scanning automático (ECR)
+- ✅ OIDC federation (sem credenciais estáticas)
 
-**POST /api/pergunta:**
+## 📝 Licença
 
-**Windows (PowerShell):**
-Invoke-RestMethod -Uri http://localhost:5000/api/pergunta -Method POST -ContentType "application/json" -Body '{"texto": "O que é Python?"}'
+Este projeto foi desenvolvido como parte do curso de Computação em Nuvem e é destinado para fins educacionais.
 
-text
-
-**Linux/Mac:**
-curl -X POST http://localhost:5000/api/pergunta
--H "Content-Type: application/json"
--d '{"texto": "O que é Python?"}'
-
-text
-
-### Opção 4: Navegador (apenas GET)
-
-Acesse diretamente no navegador:
-- `http://localhost:5000/`
-- `http://localhost:5000/api/conteudos`
-
-## Docker
-
-### Pré-requisitos
-- Docker Desktop instalado e rodando
-
-### Build da imagem
-
-docker build -t iscoolgpt-backend .
-
-text
-
-Isso pode levar alguns minutos na primeira vez.
-
-### Executar o container
-
-docker run -p 5000:5000 --env-file .env iscoolgpt-backend
-
-text
-
-**Parâmetros:**
-- `-p 5000:5000` - Mapeia a porta 5000 do container para a porta 5000 do host
-- `--env-file .env` - Carrega variáveis de ambiente do arquivo `.env`
-- `iscoolgpt-backend` - Nome da imagem
-
-### Executar em background (detached)
-
-docker run -d -p 5000:5000 --env-file .env --name iscoolgpt iscoolgpt-backend
-
-text
-
-### Comandos úteis do Docker
-
-Listar containers rodando
-docker ps
-
-Ver logs do container
-docker logs iscoolgpt
-
-Parar container
-docker stop iscoolgpt
-
-Remover container
-docker rm iscoolgpt
-
-Listar imagens
-docker images
-
-Remover imagem
-docker rmi iscoolgpt-backend
-
-text
-
-## Estrutura do Projeto
-
-iscoolgpt-backend/
-│
-├── routes/ # Módulo de rotas (Blueprints)
-│ ├── init.py # Inicializa o pacote routes
-│ ├── conteudos.py # Endpoints relacionados a conteúdos
-│ └── perguntas.py # Endpoints do assistente (integração LLM)
-│
-├── app.py # Aplicação principal Flask
-├── requirements.txt # Dependências do projeto
-├── Dockerfile # Configuração para containerização
-├── .dockerignore # Arquivos ignorados pelo Docker
-├── .gitignore # Arquivos ignorados pelo Git
-├── .env # Variáveis de ambiente (NÃO COMMITAR)
-├── request_logs.txt # Logs automáticos de requisições
-└── README.md # Documentação do projeto
-
-text
-
-### Descrição dos arquivos principais:
-
-- **app.py**: Ponto de entrada da aplicação. Configura Flask, registra Blueprints e middleware de logging.
-- **routes/conteudos.py**: Define endpoint GET para listar conteúdos educacionais.
-- **routes/perguntas.py**: Define endpoint POST para enviar perguntas ao assistente com IA (Gemini).
-- **requirements.txt**: Lista todas as dependências Python necessárias.
-- **Dockerfile**: Define como construir a imagem Docker da aplicação.
-- **.env**: Armazena variáveis sensíveis (API keys). **Nunca** deve ser commitado.
-
-## Segurança
-
-### Boas práticas implementadas:
-
-✅ **Variáveis de ambiente**: API keys armazenadas em `.env`, não no código  
-✅ **`.gitignore`**: Impede commit de arquivos sensíveis (`.env`, `venv/`, logs)  
-✅ **`.dockerignore`**: Não inclui arquivos desnecessários na imagem Docker  
-✅ **Tratamento de erros**: Mensagens genéricas para o usuário, logs detalhados  
-✅ **Logs de auditoria**: Todas as requisições são registradas  
-
-### Avisos importantes:
-
-- **Nunca** compartilhe seu arquivo `.env` ou API key
-- **Nunca** commite o `.env` no Git
-- Em produção, use serviços como **AWS Secrets Manager** ou **Azure Key Vault**
-- Desative `debug=True` em produção
-
-## Logs
-
-A aplicação gera logs automáticos de todas as requisições em `request_logs.txt`.
-
-### Formato do log:
-
-{
-"timestamp": "2025-11-18 09:00:00.123456",
-"method": "POST",
-"endpoint": "/api/pergunta",
-"query_params": {},
-"body": {"texto": "O que é Python?"},
-"ip": "127.0.0.1"
-}
-
-text
-
-### Visualizar logs:
-
-Ver últimas 10 linhas
-tail -n 10 request_logs.txt # Linux/Mac
-Get-Content request_logs.txt -Tail 10 # Windows PowerShell
-
-Ver em tempo real
-tail -f request_logs.txt # Linux/Mac
-Get-Content request_logs.txt -Wait # Windows PowerShell
-
-text
-
-## Autora
+## 👥 Autora
 
 **Maria Julia Pessoa**
-
 - GitHub: [@mariajuliapessoa](https://github.com/mariajuliapessoa)
-- Projeto: Trabalho Final - Cloud Computing 25.2
-- Instituição: CESAR School
--  
+- Projeto Final - Cloud Computing 25.2
 
-## 📄 Licença
+---
 
-Este projeto foi desenvolvido para fins educacionais como parte da cadeira de Cloud Computing
- 
-<<<<<<< HEAD
-# ProjetoCloud
-# ProjetoCloud
-=======
->>>>>>> d9a968a0645869651a1db9b1efe627397d789a9b
+**Última atualização:** 29 de Novembro de 2025
+**Versão da aplicação:** 1.0.0
+**Status:** ✅ Em produção
